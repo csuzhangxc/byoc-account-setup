@@ -1,5 +1,5 @@
 variable "bastion_name" {
-  description = "Name to indentify this bastion and other aws resources"
+  description = "Name to identify this bastion and other aws resources"
   type        = string
   validation {
     # limited by tailscale hostname.
