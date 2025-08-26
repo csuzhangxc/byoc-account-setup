@@ -1,0 +1,31 @@
+aws_region = "us-west-2"
+
+tidbcloud_tenant_id = "<your_tidbcloud_tenant_id>"
+
+bastions = {
+  tidb = {
+    eks_cluster_name = "<eks_cluster_name>"
+    auth_key = "<auth_key_provided_by_tidbcloud>"
+    # subnet_id        = "subnet-xxxx"
+  }
+
+  o11y = {
+    eks_cluster_name = "<eks_cluster_name>"
+    auth_key = "<auth_key_provided_by_tidbcloud>"
+    # subnet_id        = "subnet-xxxx"
+  }
+}
+
+# bastion_ami_id = "your_ami_id"
+
+# bastion_type = "t3.micro"
+
+# eks_cluster_access_policy = "AmazonEKSClusterAdminPolicy"
+
+# cloudwatch_audit_enable = true
+
+# cloudwatch_audit_retention_days = 90
+
+# additional_tags = {
+#   Environment = "production"
+# }
