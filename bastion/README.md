@@ -180,4 +180,4 @@ For enhanced security and compliance, each bastion host is configured by default
 
 Audit logs are located at `/var/log/audit/audit.log` and are automatically forwarded to a dedicated AWS CloudWatch Log Group: `/aws/eks/${eks_cluster_name}/byoc-bastion/audit`. To ensure a sufficient history for analysis, logs are retained in CloudWatch for 90 days by default.
 
-You can set the variable `cloudwatch_audit_enable: false` to disbale log forwarding.
+You can set the variable `cloudwatch_audit_enable: false` to disable log forwarding.
