@@ -62,7 +62,7 @@ Follow these steps to deploy the bastion(s):
    terraform init
    ```
 
-   If you prefer to use a different (Terraform backend)[https://developer.hashicorp.com/terraform/language/backend], modify the `terraform.tf` file accordingly and initialize with your chosen backend configuration.
+   If you prefer to use a different [Terraform backend](https://developer.hashicorp.com/terraform/language/backend), modify the `terraform.tf` file accordingly and initialize with your chosen backend configuration.
 
 4. **Prepare `terraform.tfvars` File:**
 
