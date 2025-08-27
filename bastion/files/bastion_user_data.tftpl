@@ -1,0 +1,98 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# --- Helper Functions ---
+INFO() {
+    echo "[INFO] $(date +'%Y-%m-%d %H:%M:%S') - $1"
+}
+
+ERROR() {
+    echo "[ERROR] $(date +'%Y-%m-%d %H:%M:%S') - $1" >&2
+}
+
+yum update -yq
+
+## --- Audit Log ---
+
+# Install and Configure auditd
+sudo yum install audit -yq
+cat <<EOF > /etc/audit/rules.d/audit.rules
+-D
+-a always,exit -F arch=b64 -S execve -S execveat -k command_execution
+-a always,exit -F arch=b32 -S execve -S execveat -k command_execution
+-a always,exit -F arch=b64 -S open -S openat -S creat -S unlink -S unlinkat -S rename -S renameat -S chmod -S fchmod -S fchmodat -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=unset -k user_file_activity
+-a always,exit -F arch=b32 -S open -S openat -S creat -S unlink -S unlinkat -S rename -S renameat -S chmod -S fchmod -S fchmodat -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=unset -k user_file_activity
+-e 2
+EOF
+augenrules --load
+
+INFO "Installed auditd and applied audit rules."
+
+# Enable cloudwatch 
+if [[ "${cloudwatch_audit_enable}" == "true" ]]; then
+    sudo yum install amazon-cloudwatch-agent -yq
+
+    cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+{
+  "agent": {
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/audit/audit.log",
+            "log_group_name": "/aws/eks/${eks_cluster_name}/byoc-bastion/audit",
+            "log_stream_name": "{instance_id}",
+            "timezone": "UTC",
+            "retention_in_days": ${cloudwatch_audit_retention_days}
+          }
+        ]
+      }
+    }
+  }
+}
+EOF
+
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+        -a fetch-config \
+        -m ec2 \
+        -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+        -s
+
+    INFO "Installed and setup cloudwatch agent."
+else
+    INFO "Skipping cloudwatch agent setup."
+fi
+
+## --- Oncall User ---
+
+USER="tidbcloud_oncall"
+sudo useradd -m -s /bin/bash "$USER"
+
+INFO "Created user $USER."
+
+## --- Kubernetes ---
+
+# Install kubectl and Invoke the kubeconfig
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x ./kubectl
+mv kubectl /usr/local/bin/kubectl
+sudo -u $USER mkdir -p "/home/$USER/.kube"
+sudo -u $USER aws eks update-kubeconfig --name ${eks_cluster_name} --region ${aws_region}
+
+INFO "Installed kubectl and fetched kubeconfig."
+
+
+## --- Tailscale ---
+
+# Install and Enable tailscale
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo systemctl enable --now tailscaled
+sudo tailscale up \
+  --authkey ${tailscale_auth_key} \
+  --hostname ${bastion_name} \
+  --ssh
+
+INFO "Installed and setup tailscale."
