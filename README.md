@@ -1,2 +1,2 @@
 # byoc-account-setup
-Automation codes for IAM policy deployment, Bastion setup, security checks, and other account provisioning tasks for clients.
+Automation deploy for TiDB Cloud BYOC IAM policy deployment, Bastion setup, environment security checks, and other account provisioning tasks for customers.
