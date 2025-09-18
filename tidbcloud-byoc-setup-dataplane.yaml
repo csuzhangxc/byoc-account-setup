@@ -573,7 +573,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-eks-node-role
+              AWS: !GetAtt TiDBCloudEKSNodeRole.Arn
             Action: sts:AssumeRole
       Policies:
         - PolicyName: metering-write-only-policy
