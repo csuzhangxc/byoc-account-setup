@@ -567,7 +567,7 @@ Resources:
   TiDBCloudMeteringWriteRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: tidbclooud-metering-write-only-role
+      RoleName: tidbcloud-metering-write-only-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -593,7 +593,7 @@ Resources:
   TiDBCloudMeteringReadWriteRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: tidbclooud-metering-read-write-role
+      RoleName: tidbcloud-metering-read-write-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
