@@ -102,6 +102,13 @@ Resources:
                 Resource:
                   - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-control-plane-role
                 Sid: UpdateO11yControlPlaneRole
+              # Requested by o11y eks
+              - Action:
+                  - iam:GetRole
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/auto-deploy-cli
+                Sid: GetDeployRole
               # Requested by o11y
               - Action:
                   - cloudformation:DescribeStacks
@@ -339,6 +346,7 @@ Resources:
                   - glue:CreateTable
                 Effect: Allow
                 Resource:
+                  - arn:aws:glue:*:*:catalog
                   - arn:aws:glue:*:*:database/tidbcloud-*
                   - arn:aws:glue:*:*:table/tidbcloud-*
               # Requested by sli
