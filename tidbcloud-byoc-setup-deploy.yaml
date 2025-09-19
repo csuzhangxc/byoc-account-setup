@@ -230,6 +230,7 @@ Resources:
                   - arn:aws:eks:*:*:cluster/o11y-*
                   - arn:aws:eks:*:*:addon/o11y-*/*/*
                   - arn:aws:eks:*:*:nodegroup/o11y-*/*/*
+                  - arn:aws:eks:*:*:access-entry/o11y-*/role/*/*/*
                 Sid: "EKSWrite"
               # Requested by o11y eks
               - Action:
@@ -327,6 +328,11 @@ Resources:
                   - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster:*
                   - arn:aws:logs:*:*:log-group:/aws/kinesisfirehose/tidbcloud-*:*
                 Sid: "losWrite"
+              # Requested by sli
+              - Action:
+                  - vpce:AllowMultiRegion
+                Effect: Allow
+                Resource: "*"
               # Requested by sli
               - Action:
                   - glue:CreateDatabase
