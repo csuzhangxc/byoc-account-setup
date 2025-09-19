@@ -100,7 +100,7 @@ Resources:
                   - iam:UpdateAssumeRolePolicy
                 Effect: Allow
                 Resource:
-                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-controlplane-role
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-control-plane-role
                 Sid: UpdateO11yControlPlaneRole
               # Requested by o11y
               - Action:
