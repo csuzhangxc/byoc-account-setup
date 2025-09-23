@@ -122,6 +122,7 @@ Resources:
                   - !Sub arn:aws:iam::${AWS::AccountId}:role/auto-deploy-cli
                   - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-eks-node-role
                   - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-eks-cluster-role
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-sli-firehose-role
                 Sid: GetDeployRole
               # Requested by o11y eks
               - Action:
