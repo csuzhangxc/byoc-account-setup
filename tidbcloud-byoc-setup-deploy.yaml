@@ -117,6 +117,7 @@ Resources:
               - Action:
                   - iam:GetRole
                   - iam:PassRole
+                  - iam:ListAttachedRolePolicies
                 Effect: Allow
                 Resource:
                   - !Sub arn:aws:iam::${AWS::AccountId}:role/auto-deploy-cli
