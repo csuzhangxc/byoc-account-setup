@@ -132,6 +132,7 @@ Resources:
                 Effect: Allow
                 Resource:
                   - arn:aws:iam::*:role/aws-service-role/eks-nodegroup.amazonaws.com/AWSServiceRoleForAmazonEKSNodegroup
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-eks-cluster-role
                 Sid: EKSCreateServiceLinkedRole
               # Requested by o11y
               - Action:
