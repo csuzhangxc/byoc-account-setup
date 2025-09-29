@@ -20,6 +20,9 @@ Parameters:
     Type: String
     Description: "TiDB Cloud Clinic Account AWS Principal"
     Default: "552185537300"
+  O11yHostedZoneId:
+    Type: String
+    Description: "The Route 53 hosted zone ID to manage DNS records for o11y"
 Resources:
   # Create an eks service role
   TiDBCloudEKSServiceRole:
@@ -485,6 +488,12 @@ Resources:
                   - route53:GetHostedZone
                 Resource:
                   - !Sub arn:aws:route53:::hostedzone/${HostedZoneId}
+              - Sid: Route53ForO11yPrivateLinkPrivateDNS
+                Effect: Allow
+                Action:
+                  - route53:AssociateVPCWithHostedZone
+                Resource:
+                  - !Sub arn:aws:route53:::hostedzone/${O11yHostedZoneId}
               - Sid: Route53GetChange
                 Effect: Allow
                 Action:
