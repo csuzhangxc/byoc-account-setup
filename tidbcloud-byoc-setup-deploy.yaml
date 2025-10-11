@@ -283,6 +283,7 @@ Resources:
               - Action:
                   - s3:CreateBucket
                   - s3:PutBucketPolicy
+                  - s3:PutBucketTagging
                   - s3:PutBucketPublicAccessBlock
                   - s3:PutLifecycleConfiguration
                 Effect: Allow
