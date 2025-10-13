@@ -296,6 +296,7 @@ Resources:
               - Action:
                   - s3:ListBucket
                   - s3:GetBucketTagging
+                  - s3:GetBucketPolicy
                   - s3:GetLifecycleConfiguration
                 Effect: Allow
                 Resource: "*"
@@ -389,7 +390,7 @@ Resources:
               # Requested by sli
               - Action:
                   - firehose:CreateDeliveryStream
-                  - firehose:TagResource
+                  - firehose:TagDeliveryStream
                 Effect: Allow
                 Resource:
                   - arn:aws:firehose:*:*:deliverystream/tidbcloud-*
