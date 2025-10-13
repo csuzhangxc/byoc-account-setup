@@ -295,6 +295,7 @@ Resources:
               # Requested by o11y, sli, metering
               - Action:
                   - s3:ListBucket
+                  - s3:GetBucketTagging
                   - s3:GetLifecycleConfiguration
                 Effect: Allow
                 Resource: "*"
@@ -364,6 +365,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:PutRetentionPolicy
                   - logs:CreateLogStream
+                  - logs:TagResource
                 Effect: Allow
                 Resource:
                   - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster:*
@@ -378,6 +380,7 @@ Resources:
               - Action:
                   - glue:CreateDatabase
                   - glue:CreateTable
+                  - glue:TagResource
                 Effect: Allow
                 Resource:
                   - arn:aws:glue:*:*:catalog
@@ -386,6 +389,7 @@ Resources:
               # Requested by sli
               - Action:
                   - firehose:CreateDeliveryStream
+                  - firehose:TagResource
                 Effect: Allow
                 Resource:
                   - arn:aws:firehose:*:*:deliverystream/tidbcloud-*
