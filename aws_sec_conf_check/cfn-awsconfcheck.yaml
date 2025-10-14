@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS Config & Security Checks deployment (awsconfcheck) - multi-arch Lambda functions referencing pre-uploaded code in S3.
+
+Metadata:
+  Version: 1.0.0
+  License: MIT
+
+Parameters:
+  StackNameParam:
+    Type: String
+    Description: Logical stack name passed by script (for tagging & report key prefix)
+  BucketName:
+    Type: String
+    Description: Existing S3 bucket name containing uploaded Lambda zips and receiving reports
+  CodeKeyAmd64:
+    Type: String
+    Default: ""
+    Description: S3 key for amd64 Lambda zip (optional if EnableAmd64=false)
+  CodeKeyArm64:
+    Type: String
+    Default: ""
+    Description: S3 key for arm64 Lambda zip (optional if EnableArm64=false)
+  ReportPrefix:
+    Type: String
+    Default: reports
+    Description: Prefix inside the bucket for HTML report objects
+  RoleArn:
+    Type: String
+    Default: ''
+    Description: (Optional) Target role ARN for the scanner to assume (SoftDeprecated)
+  ExternalId:
+    Type: String
+    Default: ''
+    Description: (Optional) External ID used when assuming the target role (SoftDeprecated)
+  SessionName:
+    Type: String
+    Default: awsconfcheck-session
+    Description: STS session name (SoftDeprecated)
+  Regions:
+    Type: String
+    Default: all
+    Description: Comma separated regions or 'all'
+  Concurrency:
+    Type: Number
+    Default: 10
+    Description: Max concurrent API operations used by the tool
+  AuthorizedRegionsOnly:
+    Type: String
+    AllowedValues: ['true','false']
+    Default: 'false'
+    Description: Only run checks in regions where caller appears authorized
+  EnableAmd64:
+    Type: String
+    AllowedValues: ['true','false']
+    Default: 'true'
+    Description: Deploy x86_64 Lambda function
+  EnableArm64:
+    Type: String
+    AllowedValues: ['true','false']
+    Default: 'true'
+    Description: Deploy arm64 Lambda function
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+    Description: CloudWatch Logs retention in days
+  SingleRun:
+    Type: String
+    AllowedValues: ['true','false']
+    Default: 'false'
+    Description: If true, custom runtime exits after first event
+
+Conditions:
+  UseAmd64: !Equals [!Ref EnableAmd64, 'true']
+  UseArm64: !Equals [!Ref EnableArm64, 'true']
+
+Resources:
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: '/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/SecurityAudit
+      Policies:
+        - PolicyName: awsconfcheck-inline
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketName}
+                  - !Sub arn:aws:s3:::${BucketName}/*
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: '*' # Scope can be reduced by user; left broad per requirement
+      Tags:
+        - Key: StackName
+          Value: !Ref StackNameParam
+
+  # Placeholder small ZIP for initial deploy. Code replaced later by update-function-code.
+
+  LambdaFunctionAmd64:
+    Type: AWS::Lambda::Function
+    Condition: UseAmd64
+    Properties:
+      FunctionName: !Sub awsconfcheck-amd64-${StackNameParam}
+      Description: awsconfcheck multi-arch function (x86_64) placeholder
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures: [x86_64]
+      Runtime: provided.al2023
+      Handler: bootstrap
+      Timeout: 900
+      MemorySize: 512
+      # Code from pre-uploaded S3 object
+      Code:
+        S3Bucket: !Ref BucketName
+        S3Key: !Ref CodeKeyAmd64
+      Environment:
+        Variables:
+          ROLE_ARN: !Ref RoleArn
+          EXTERNAL_ID: !Ref ExternalId
+          SESSION_NAME: !Ref SessionName
+          REGIONS: !Ref Regions
+          CONCURRENCY: !Ref Concurrency
+          AUTHORIZED_REGIONS_ONLY: !Ref AuthorizedRegionsOnly
+          REPORT_PREFIX: !Ref ReportPrefix
+          BUCKET_NAME: !Ref BucketName
+          STACK_NAME: !Ref StackNameParam
+          SINGLE_RUN: !Ref SingleRun
+
+  LambdaFunctionArm64:
+    Type: AWS::Lambda::Function
+    Condition: UseArm64
+    Properties:
+      FunctionName: !Sub awsconfcheck-arm64-${StackNameParam}
+      Description: awsconfcheck multi-arch function (arm64) placeholder
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures: [arm64]
+      Runtime: provided.al2023
+      Handler: bootstrap
+      Timeout: 900
+      MemorySize: 512
+      Code:
+        S3Bucket: !Ref BucketName
+        S3Key: !Ref CodeKeyArm64
+      Environment:
+        Variables: 
+          ROLE_ARN: !Ref RoleArn
+          EXTERNAL_ID: !Ref ExternalId
+          SESSION_NAME: !Ref SessionName
+          REGIONS: !Ref Regions
+          CONCURRENCY: !Ref Concurrency
+          AUTHORIZED_REGIONS_ONLY: !Ref AuthorizedRegionsOnly
+          REPORT_PREFIX: !Ref ReportPrefix
+          BUCKET_NAME: !Ref BucketName
+          STACK_NAME: !Ref StackNameParam
+          SINGLE_RUN: !Ref SingleRun
+
+  LogGroupAmd64:
+    Type: AWS::Logs::LogGroup
+    Condition: UseAmd64
+    Properties:
+      LogGroupName: !Sub /aws/lambda/awsconfcheck-amd64-${StackNameParam}
+      RetentionInDays: !Ref LogRetentionDays
+
+  LogGroupArm64:
+    Type: AWS::Logs::LogGroup
+    Condition: UseArm64
+    Properties:
+      LogGroupName: !Sub /aws/lambda/awsconfcheck-arm64-${StackNameParam}
+      RetentionInDays: !Ref LogRetentionDays
+
+Outputs:
+  BucketNameOut:
+    Value: !Ref BucketName
+    Export:
+      Name: !Sub ${AWS::StackName}-BucketName
+  FunctionAmd64:
+    Condition: UseAmd64
+    Value: !Ref LambdaFunctionAmd64
+  FunctionArm64:
+    Condition: UseArm64
+    Value: !Ref LambdaFunctionArm64
+  ReportPrefixOut:
+    Value: !Ref ReportPrefix
