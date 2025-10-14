@@ -304,11 +304,7 @@ Resources:
                 Sid: "S3ReadOnly"
               # Requested metering
               - Action:
-                  - s3:GetBucketAcl
-                  - s3:GetBucketCORS
-                  - s3:GetBucketWebsite
-                  - s3:GetBucketVersioning
-                  - s3:GetAccelerateConfiguration
+                  - s3:Get*
                 Effect: Allow
                 Resource:
                   - arn:aws:s3:::tidbcloud-*
