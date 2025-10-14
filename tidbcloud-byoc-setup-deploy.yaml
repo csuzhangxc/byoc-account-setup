@@ -297,10 +297,22 @@ Resources:
                   - s3:ListBucket
                   - s3:GetBucketTagging
                   - s3:GetBucketPolicy
+                  - s3:GetBucketPublicAccessBlock
                   - s3:GetLifecycleConfiguration
                 Effect: Allow
                 Resource: "*"
                 Sid: "S3ReadOnly"
+              # Requested metering
+              - Action:
+                  - s3:GetBucketAcl
+                  - s3:GetBucketCORS
+                  - s3:GetBucketWebsite
+                  - s3:GetBucketVersioning
+                  - s3:GetAccelerateConfiguration
+                Effect: Allow
+                Resource:
+                  - arn:aws:s3:::tidbcloud-*
+                Sid: "S3MeteringReadOnly"
               # Requested by o11y
               - Action:
                   - route53:ChangeResourceRecordSets
