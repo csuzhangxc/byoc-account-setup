@@ -485,6 +485,12 @@ Resources:
                   - route53:GetHostedZone
                 Resource:
                   - !Sub arn:aws:route53:::hostedzone/${HostedZoneId}
+              - Sid: Route53ForO11yPrivateLinkPrivateDNS
+                Effect: Allow
+                Action:
+                  - route53:AssociateVPCWithHostedZone
+                Resource:
+                  - arn:aws:route53:::hostedzone/*
               - Sid: Route53GetChange
                 Effect: Allow
                 Action:
@@ -586,6 +592,7 @@ Resources:
                   - s3:ListBucketMultipartUploads
                   - s3:ListMultipartUploadParts
                   - s3:PutObject
+                  - s3:HeadObject
                 Effect: Allow
                 Resource:
                   - arn:aws:s3:::tidbcloud-metering-*
@@ -615,6 +622,7 @@ Resources:
                   - s3:ListBucketMultipartUploads
                   - s3:ListMultipartUploadParts
                   - s3:PutObject
+                  - s3:DeleteObject
                 Effect: Allow
                 Resource:
                   - arn:aws:s3:::tidbcloud-metering-*
@@ -623,6 +631,7 @@ Resources:
                   - s3:GetBucket*
                   - s3:GetObject
                   - s3:ListObject
+                  - s3:HeadObject
                 Effect: Allow
                 Resource:
                   - arn:aws:s3:::tidbcloud-metering-*

@@ -283,6 +283,7 @@ Resources:
               - Action:
                   - s3:CreateBucket
                   - s3:PutBucketPolicy
+                  - s3:PutBucketTagging
                   - s3:PutBucketPublicAccessBlock
                   - s3:PutLifecycleConfiguration
                 Effect: Allow
@@ -294,10 +295,20 @@ Resources:
               # Requested by o11y, sli, metering
               - Action:
                   - s3:ListBucket
+                  - s3:GetBucketTagging
+                  - s3:GetBucketPolicy
+                  - s3:GetBucketPublicAccessBlock
                   - s3:GetLifecycleConfiguration
                 Effect: Allow
                 Resource: "*"
                 Sid: "S3ReadOnly"
+              # Requested metering
+              - Action:
+                  - s3:Get*
+                Effect: Allow
+                Resource:
+                  - arn:aws:s3:::tidbcloud-*
+                Sid: "S3MeteringReadOnly"
               # Requested by o11y
               - Action:
                   - route53:ChangeResourceRecordSets
@@ -363,6 +374,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:PutRetentionPolicy
                   - logs:CreateLogStream
+                  - logs:TagResource
                 Effect: Allow
                 Resource:
                   - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster:*
@@ -377,6 +389,7 @@ Resources:
               - Action:
                   - glue:CreateDatabase
                   - glue:CreateTable
+                  - glue:TagResource
                 Effect: Allow
                 Resource:
                   - arn:aws:glue:*:*:catalog
@@ -385,6 +398,7 @@ Resources:
               # Requested by sli
               - Action:
                   - firehose:CreateDeliveryStream
+                  - firehose:TagDeliveryStream
                 Effect: Allow
                 Resource:
                   - arn:aws:firehose:*:*:deliverystream/tidbcloud-*
