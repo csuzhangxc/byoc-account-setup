@@ -8,7 +8,7 @@ To meet the needs of customers with higher data sovereignty and compliance requi
 In this model, the **Control Plane** of TiDB Cloud is managed by PingCAP, while the **Data Plane** is fully deployed within the customer's own cloud environment.
 This design allows customers to enjoy the convenience of TiDB Cloud’s managed capabilities while retaining complete control over their data assets.
 
-> Note: The terms *Control Plane* and *Data Plane* follow the architectural concepts officially described in the [PingCAP article](https://www.pingcap.com/article/bring-your-own-cloud-explained-simply-for-everyone/).
+> Note: The terms *Control Plane* and *Data Plane* follow the architectural concepts officially described in the [PingCAP documentation](https://www.pingcap.com/article/bring-your-own-cloud-explained-simply-for-everyone/).
 
 Under the BYOC model, customers need to deploy and configure several foundational components within their own cloud environment (such as bastion hosts, IAM roles, and optional security validation scripts).
 To simplify the deployment process and ensure consistency, PingCAP centrally maintains these deployment scripts and documentation in this repository.
