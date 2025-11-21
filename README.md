@@ -106,4 +106,4 @@ Before using any script in this repository, ensure that:
 ---
 
 
-© 2025 PingCAP. All rights reserved.
+Copyright 2025 PingCAP, Inc.
