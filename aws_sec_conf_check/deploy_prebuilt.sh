@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Author: DylanC
-# License: Apache 2.0
 
 
 set -euo pipefail
