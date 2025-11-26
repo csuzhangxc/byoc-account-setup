@@ -32,6 +32,7 @@ data "aws_security_group" "eks_cluster_sg" {
 resource "aws_security_group" "bastion_sg" {
   name   = var.bastion_name
   vpc_id = local.vpc_id
+  description = "Security group for bastion host"
 
   egress {
     from_port   = 0
@@ -49,6 +50,13 @@ resource "aws_instance" "bastion_instance" {
   subnet_id              = local.subnet_id
   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.bastion_profile.name
+  root_block_device {
+    encrypted = true
+  }
+  metadata_options {
+    http_tokens = "required"
+  }
+  disable_api_termination = true
 
   user_data = templatefile("files/bastion_user_data.tftpl", {
     aws_region                      = var.aws_region,
