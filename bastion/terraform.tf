@@ -6,10 +6,7 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "YOUR_S3_BUCKET"
-    key =  "TF_STATE_FILE_PATH"
-    region = "us-west-2"
+  backend "local" {
   }
 }
 
