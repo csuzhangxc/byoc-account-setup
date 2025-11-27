@@ -306,6 +306,29 @@ Resources:
       InstanceProfileName: tidbcloud-eks-node-instance-profile
       Roles:
         - !Ref TiDBCloudEKSNodeRole
+  # Create audit-log write only role
+  TiDBCloudAuditLogWriteOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tidbcloud-audit-log-write-only-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt TiDBCloudEKSNodeRole.Arn
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: audit-log-bucket-write-only-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: WriteAuditLogBucket
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - arn:aws:s3:::tidbcloud-*-byoc-audit/*
   # Create dataplane-manager role
   TiDBCloudDataplaneManagerRole:
     Type: AWS::IAM::Role
