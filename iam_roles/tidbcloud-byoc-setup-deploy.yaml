@@ -279,7 +279,7 @@ Resources:
                 Effect: Allow
                 Resource: "*"
                 Sid: "EKSReadOnly"
-              # Requested by o11y, sli, metering
+              # Requested by o11y, sli
               - Action:
                   - s3:CreateBucket
                   - s3:PutBucketPolicy
@@ -292,7 +292,7 @@ Resources:
                   - arn:aws:s3:::o11y-*
                   - arn:aws:s3:::loki-*
                 Sid: "S3Write"
-              # Requested by o11y, sli, metering
+              # Requested by o11y, sli
               - Action:
                   - s3:ListBucket
                   - s3:GetBucketTagging
@@ -302,13 +302,6 @@ Resources:
                 Effect: Allow
                 Resource: "*"
                 Sid: "S3ReadOnly"
-              # Requested metering
-              - Action:
-                  - s3:Get*
-                Effect: Allow
-                Resource:
-                  - arn:aws:s3:::tidbcloud-*
-                Sid: "S3MeteringReadOnly"
               # Requested by o11y
               - Action:
                   - route53:ChangeResourceRecordSets
