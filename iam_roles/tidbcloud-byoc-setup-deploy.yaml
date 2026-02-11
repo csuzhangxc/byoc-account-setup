@@ -320,6 +320,15 @@ Resources:
                 Sid: "Route53ReadOnly"
               # Requested by o11y
               - Action:
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:ListTagsForResource
+                Effect: Allow
+                Resource:
+                  - arn:aws:cloudwatch:us-west-2:*:alarm:WatchdogDown-*
+                  - arn:aws:cloudwatch:us-west-2:*:alarm:AlertmanagerClusterFailedToSendAlerts-*
+                Sid: "CloudWatchReadOnly"
+              # Requested by o11y
+              - Action:
                   - cloudwatch:PutMetricAlarm
                 Effect: Allow
                 Resource:
