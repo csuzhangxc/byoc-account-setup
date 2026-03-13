@@ -136,6 +136,15 @@ Resources:
                   - arn:aws:iam::*:role/aws-service-role/eks-nodegroup.amazonaws.com/AWSServiceRoleForAmazonEKSNodegroup
                   - arn:aws:iam::*:role/aws-service-role/eks.amazonaws.com/AWSServiceRoleForAmazonEKS
                 Sid: EKSCreateServiceLinkedRole
+              - Action:
+                  - iam:CreateServiceLinkedRole
+                Effect: Allow
+                Resource:
+                  - arn:aws:iam::*:role/aws-service-role/ops.apigateway.amazonaws.com/AWSServiceRoleForAPIGateway
+                Condition:
+                  StringEquals:
+                    iam:AWSServiceName: ops.apigateway.amazonaws.com
+                Sid: ApiGatewayCreateServiceLinkedRole
               # Requested by o11y
               - Action:
                   - elasticloadbalancing:DescribeLoadBalancers
@@ -323,6 +332,7 @@ Resources:
                 Sid: "Route53Write"
               - Action:
                   - route53:GetHostedZone
+                  - route53:GetChange
                   - route53:ListHostedZones
                   - route53:ListHostedZonesByName
                   - route53:ListResourceRecordSets
@@ -336,16 +346,16 @@ Resources:
                   - cloudwatch:ListTagsForResource
                 Effect: Allow
                 Resource:
-                  - arn:aws:cloudwatch:us-west-2:*:alarm:WatchdogDown-*
-                  - arn:aws:cloudwatch:us-west-2:*:alarm:AlertmanagerClusterFailedToSendAlerts-*
+                  - arn:aws:cloudwatch:*:*:alarm:WatchdogDown-*
+                  - arn:aws:cloudwatch:*:*:alarm:AlertmanagerClusterFailedToSendAlerts-*
                 Sid: "CloudWatchReadOnly"
               # Requested by o11y
               - Action:
                   - cloudwatch:PutMetricAlarm
                 Effect: Allow
                 Resource:
-                  - arn:aws:cloudwatch:us-west-2:*:alarm:WatchdogDown-*
-                  - arn:aws:cloudwatch:us-west-2:*:alarm:AlertmanagerClusterFailedToSendAlerts-*
+                  - arn:aws:cloudwatch:*:*:alarm:WatchdogDown-*
+                  - arn:aws:cloudwatch:*:*:alarm:AlertmanagerClusterFailedToSendAlerts-*
                 Sid: "CloudWatchWrite"
               # Requested by o11y
               - Action:
@@ -395,6 +405,33 @@ Resources:
                   - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster:*
                   - arn:aws:logs:*:*:log-group:/aws/kinesisfirehose/tidbcloud-*:*
                 Sid: "losWrite"
+              - Action:
+                  - logs:ListTagsForResource
+                Effect: Allow
+                Resource:
+                  - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster
+                  - arn:aws:logs:*:*:log-group:/aws/kinesisfirehose/tidbcloud-*
+                Sid: "LogsTagReadOnly"
+              - Action:
+                  - logs:DeleteLogGroup
+                Effect: Allow
+                Resource:
+                  - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster
+                  - arn:aws:logs:*:*:log-group:/aws/kinesisfirehose/tidbcloud-*
+                Sid: "LogsDelete"
+              - Action:
+                  - logs:DeleteLogStream
+                Effect: Allow
+                Resource:
+                  - arn:aws:logs:*:*:log-group:/aws/eks/o11y-*/cluster:log-stream:*
+                  - arn:aws:logs:*:*:log-group:/aws/kinesisfirehose/tidbcloud-*:log-stream:*
+                Sid: "LogsStreamDelete"
+              - Action:
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Effect: Allow
+                Resource: "*"
+                Sid: "LogsReadOnly"
               # Requested by sli
               - Action:
                   - vpce:AllowMultiRegion
@@ -403,22 +440,44 @@ Resources:
               # Requested by sli
               - Action:
                   - glue:CreateDatabase
+                  - glue:DeleteDatabase
                   - glue:CreateTable
+                  - glue:DeleteTable
+                  - glue:GetTable
                   - glue:TagResource
+                  - glue:GetDatabase
+                  - glue:GetTags
                 Effect: Allow
                 Resource:
                   - arn:aws:glue:*:*:catalog
                   - arn:aws:glue:*:*:database/tidbcloud-*
                   - arn:aws:glue:*:*:table/tidbcloud-*
+                  - arn:aws:glue:*:*:userDefinedFunction/tidbcloud-*/*
+              - Action:
+                  - apigateway:GET
+                  - apigateway:POST
+                  - apigateway:PUT
+                  - apigateway:DELETE
+                  - apigateway:TagResource
+                Effect: Allow
+                Resource:
+                  - arn:aws:apigateway:*::/restapis
+                  - arn:aws:apigateway:*::/restapis/*
+                  - arn:aws:apigateway:*::/vpclinks
+                  - arn:aws:apigateway:*::/vpclinks/*
+                  - arn:aws:apigateway:*::/tags/*
+                Sid: "ApiGatewayWrite"
               # Requested by sli
               - Action:
                   - firehose:CreateDeliveryStream
+                  - firehose:DeleteDeliveryStream
                   - firehose:TagDeliveryStream
                 Effect: Allow
                 Resource:
                   - arn:aws:firehose:*:*:deliverystream/tidbcloud-*
               # Requested by sli
               - Action:
+                  - firehose:ListTagsForDeliveryStream
                   - firehose:DescribeDeliveryStream
                 Effect: Allow
                 Resource:

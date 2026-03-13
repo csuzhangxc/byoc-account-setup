@@ -443,6 +443,15 @@ Resources:
                   - ec2:CreateTags
                   - ec2:DeleteTags
                 Resource: "*"
+              - Sid: VPCPeeringOperations
+                Effect: Allow
+                Action:
+                  - ec2:CreateVpcPeeringConnection
+                  - ec2:DeleteVpcPeeringConnection
+                  - ec2:DescribeVpcPeeringConnections
+                  - ec2:AcceptVpcPeeringConnection
+                  - ec2:DeleteRoute
+                Resource: "*"
               - Sid: PrivateLinkOperations
                 Effect: Allow
                 Action:
@@ -519,6 +528,19 @@ Resources:
                 Action:
                   - route53:GetChange
                 Resource: arn:aws:route53:::change/*
+              - Sid: Route53ForChangefeedPrivateLinkPrivateDNS
+                Effect: Allow
+                Action:
+                  - route53:CreateHostedZone
+                  - route53:GetHostedZone
+                  - route53:DeleteHostedZone
+                  - route53:AssociateVPCWithHostedZone
+                  - route53:DisassociateVPCFromHostedZone
+                  - route53:ChangeResourceRecordSets
+                  - route53:ListResourceRecordSets
+                  - route53:ListTagsForResource
+                  - route53:ChangeTagsForResource
+                Resource: "*"
   TiDBCloudSliRole:
     Type: AWS::IAM::Role
     Properties:
