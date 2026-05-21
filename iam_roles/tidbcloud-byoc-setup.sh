@@ -13,11 +13,17 @@ Required:
   --pca-arn <arn>               ARN of the private CA
 
 Optional:
-  --o11y-global-role-arns <arns>  Comma-separated list of O11Y global role ARNs
-                                  (default: arn:aws:iam::557537366020:role/globalserver-role-780c8f0,arn:aws:iam::380838443567:role/tidbcloud-global-apigw)
-  --github-runner-id <id>         Google account ID for GitHub runner
-                                  (default: 114667344163696279999)
-  -h, --help                      Show this help message
+  --additional-pca-arns <arns>       Comma-separated additional PCA ARNs for multi-region
+                                     (full ARNs, e.g. arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID)
+  --additional-tidb-hz-arns <arns>   Comma-separated additional TiDB hosted zone ARNs for multi-region
+                                     (full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)
+  --additional-o11y-hz-arns <arns>   Comma-separated additional o11y hosted zone ARNs for multi-region
+                                     (full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)
+  --o11y-global-role-arns <arns>     Comma-separated list of O11Y global role ARNs
+                                     (default: arn:aws:iam::557537366020:role/globalserver-role-780c8f0,arn:aws:iam::380838443567:role/tidbcloud-global-apigw)
+  --github-runner-id <id>            Google account ID for GitHub runner
+                                     (default: 114667344163696279999)
+  -h, --help                         Show this help message
 EOF
   exit "${1:-1}"
 }
@@ -30,6 +36,9 @@ ClinicAccountId=""
 TidbHostedZoneId=""
 O11yHostedZoneId=""
 TidbPCAArn=""
+AdditionalPCAArns=""
+AdditionalTidbHostedZoneArns=""
+AdditionalO11yHostedZoneArns=""
 
 require_arg() {
   if [[ $# -lt 2 || "${2-}" == -* ]]; then
@@ -55,6 +64,15 @@ while [[ $# -gt 0 ]]; do
     --pca-arn)
       require_arg "$@"
       TidbPCAArn="$2"; shift 2 ;;
+    --additional-pca-arns)
+      require_arg "$@"
+      AdditionalPCAArns="$2"; shift 2 ;;
+    --additional-tidb-hz-arns)
+      require_arg "$@"
+      AdditionalTidbHostedZoneArns="$2"; shift 2 ;;
+    --additional-o11y-hz-arns)
+      require_arg "$@"
+      AdditionalO11yHostedZoneArns="$2"; shift 2 ;;
     --o11y-global-role-arns)
       require_arg "$@"
       O11yGlobalRoleArns="$2"; shift 2 ;;
@@ -83,14 +101,24 @@ if [[ ${#missing[@]} -gt 0 ]]; then
   usage
 fi
 
+deploy_overrides=""
+[[ -n "$AdditionalO11yHostedZoneArns" ]] && deploy_overrides="$deploy_overrides AdditionalO11yHostedZoneArns=$AdditionalO11yHostedZoneArns"
+
+# shellcheck disable=SC2086
 aws cloudformation deploy \
   --stack-name tidbcloud-byoc-setup-deploy \
   --template-file ./tidbcloud-byoc-setup-deploy.yaml \
   --parameter-overrides ControlPlaneAccountId=$ControlPlaneAccountId \
                GithubRunnerGoogleAccountId=$GithubRunnerGoogleAccountId \
                O11yHostedZoneId=$O11yHostedZoneId \
+               $deploy_overrides \
   --capabilities CAPABILITY_NAMED_IAM
 
+dataplane_overrides=""
+[[ -n "$AdditionalPCAArns" ]] && dataplane_overrides="$dataplane_overrides AdditionalPCAArns=$AdditionalPCAArns"
+[[ -n "$AdditionalTidbHostedZoneArns" ]] && dataplane_overrides="$dataplane_overrides AdditionalHostedZoneArns=$AdditionalTidbHostedZoneArns"
+
+# shellcheck disable=SC2086
 aws cloudformation deploy \
   --stack-name tidbcloud-byoc-setup-dataplane \
   --template-file ./tidbcloud-byoc-setup-dataplane.yaml \
@@ -98,11 +126,17 @@ aws cloudformation deploy \
                HostedZoneId=$TidbHostedZoneId \
                PCAArn=$TidbPCAArn \
                ClinicAccountId=$ClinicAccountId \
+               $dataplane_overrides \
   --capabilities CAPABILITY_NAMED_IAM
 
+o11y_overrides=""
+[[ -n "$AdditionalO11yHostedZoneArns" ]] && o11y_overrides="$o11y_overrides AdditionalO11yHostedZoneArns=$AdditionalO11yHostedZoneArns"
+
+# shellcheck disable=SC2086
 aws cloudformation deploy \
   --stack-name tidbcloud-byoc-setup-o11y \
   --template-file ./tidbcloud-byoc-setup-o11y.yaml \
   --parameter-overrides O11yHostedZoneId=$O11yHostedZoneId \
                O11yGlobalRoleArns=$O11yGlobalRoleArns \
+               $o11y_overrides \
   --capabilities CAPABILITY_NAMED_IAM

@@ -27,8 +27,18 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"
+  AdditionalPCAArns:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: "Additional PCA ARNs for multi-region deployments (comma-separated full ARNs, e.g. arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID)"
+  AdditionalHostedZoneArns:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: "Additional hosted zone ARNs for multi-region deployments (comma-separated full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)"
 Conditions:
   EnableExternalDNSNodeRolePolicyCondition: !Equals [!Ref EnableExternalDNSNodeRolePolicy, "true"]
+  HasAdditionalPCAs: !Not [!Equals [!Join [",", !Ref AdditionalPCAArns], ""]]
+  HasAdditionalHostedZones: !Not [!Equals [!Join [",", !Ref AdditionalHostedZoneArns], ""]]
 Resources:
   # Create an eks service role
   TiDBCloudEKSServiceRole:
@@ -74,6 +84,15 @@ Resources:
                   - acm-pca:GetCertificate
                   - acm-pca:IssueCertificate
                 Resource: !Sub ${PCAArn}
+              - !If
+                - HasAdditionalPCAs
+                - Effect: Allow
+                  Action:
+                    - acm-pca:DescribeCertificateAuthority
+                    - acm-pca:GetCertificate
+                    - acm-pca:IssueCertificate
+                  Resource: !Ref AdditionalPCAArns
+                - !Ref AWS::NoValue
         # Attach inline policy for aws-load-balancer-controller
         # Ref: https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/v2.13.4/docs/install/iam_policy.json
         - PolicyName: AllowLoadBalancerController
@@ -335,6 +354,15 @@ Resources:
                     - route53:ListTagsForResources
                   Resource:
                     - !Sub arn:aws:route53:::hostedzone/${HostedZoneId}
+                - !If
+                  - HasAdditionalHostedZones
+                  - Effect: Allow
+                    Action:
+                      - route53:ChangeResourceRecordSets
+                      - route53:ListResourceRecordSets
+                      - route53:ListTagsForResources
+                    Resource: !Ref AdditionalHostedZoneArns
+                  - !Ref AWS::NoValue
                 - Effect: Allow
                   Action:
                     - route53:ListHostedZones
@@ -559,6 +587,17 @@ Resources:
                   - route53:GetHostedZone
                 Resource:
                   - !Sub arn:aws:route53:::hostedzone/${HostedZoneId}
+              - !If
+                - HasAdditionalHostedZones
+                - Sid: Route53AdditionalHostedZoneOperations
+                  Effect: Allow
+                  Action:
+                    - route53:ListResourceRecordSets
+                    - route53:ChangeResourceRecordSets
+                    - route53:AssociateVPCWithHostedZone
+                    - route53:GetHostedZone
+                  Resource: !Ref AdditionalHostedZoneArns
+                - !Ref AWS::NoValue
               - Sid: Route53ForO11yPrivateLinkPrivateDNS
                 Effect: Allow
                 Action:
