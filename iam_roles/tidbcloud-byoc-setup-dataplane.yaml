@@ -31,14 +31,14 @@ Parameters:
     Type: CommaDelimitedList
     Default: ""
     Description: "Additional PCA ARNs for multi-region deployments (comma-separated full ARNs, e.g. arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID)"
-  AdditionalHostedZoneArns:
+  AdditionalHostedZoneIds:
     Type: CommaDelimitedList
     Default: ""
-    Description: "Additional hosted zone ARNs for multi-region deployments (comma-separated full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)"
+    Description: "Additional hosted zone IDs for multi-region deployments (comma-separated IDs, e.g. Z111AAA,Z222BBB)"
 Conditions:
   EnableExternalDNSNodeRolePolicyCondition: !Equals [!Ref EnableExternalDNSNodeRolePolicy, "true"]
   HasAdditionalPCAs: !Not [!Equals [!Join [",", !Ref AdditionalPCAArns], ""]]
-  HasAdditionalHostedZones: !Not [!Equals [!Join [",", !Ref AdditionalHostedZoneArns], ""]]
+  HasAdditionalHostedZones: !Not [!Equals [!Join [",", !Ref AdditionalHostedZoneIds], ""]]
 Resources:
   # Create an eks service role
   TiDBCloudEKSServiceRole:
@@ -361,7 +361,7 @@ Resources:
                       - route53:ChangeResourceRecordSets
                       - route53:ListResourceRecordSets
                       - route53:ListTagsForResources
-                    Resource: !Ref AdditionalHostedZoneArns
+                    Resource: !Ref AdditionalHostedZoneIds
                   - !Ref AWS::NoValue
                 - Effect: Allow
                   Action:
@@ -596,7 +596,7 @@ Resources:
                     - route53:ChangeResourceRecordSets
                     - route53:AssociateVPCWithHostedZone
                     - route53:GetHostedZone
-                  Resource: !Ref AdditionalHostedZoneArns
+                  Resource: !Ref AdditionalHostedZoneIds
                 - !Ref AWS::NoValue
               - Sid: Route53ForO11yPrivateLinkPrivateDNS
                 Effect: Allow

@@ -116,7 +116,7 @@ fi
 
 deploy_overrides=""
 if [[ -n "$AdditionalO11yHostedZoneIds" ]]; then
-  deploy_overrides="AdditionalO11yHostedZoneArns=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
+  deploy_overrides="AdditionalO11yHostedZoneIds=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
 fi
 
 # shellcheck disable=SC2086
@@ -132,7 +132,7 @@ aws cloudformation deploy \
 dataplane_overrides=""
 [[ -n "$AdditionalPCAArns" ]] && dataplane_overrides="$dataplane_overrides AdditionalPCAArns=$AdditionalPCAArns"
 if [[ -n "$AdditionalTidbHostedZoneIds" ]]; then
-  dataplane_overrides="$dataplane_overrides AdditionalHostedZoneArns=$(hz_ids_to_arns "$AdditionalTidbHostedZoneIds")"
+  dataplane_overrides="$dataplane_overrides AdditionalHostedZoneIds=$(hz_ids_to_arns "$AdditionalTidbHostedZoneIds")"
 fi
 
 # shellcheck disable=SC2086
@@ -148,7 +148,7 @@ aws cloudformation deploy \
 
 o11y_overrides=""
 if [[ -n "$AdditionalO11yHostedZoneIds" ]]; then
-  o11y_overrides="AdditionalO11yHostedZoneArns=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
+  o11y_overrides="AdditionalO11yHostedZoneIds=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
 fi
 
 # shellcheck disable=SC2086

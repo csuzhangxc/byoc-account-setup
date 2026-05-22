@@ -12,12 +12,12 @@ Parameters:
   O11yHostedZoneId:
     Type: String
     Description: "The Route 53 hosted zone ID to manage DNS records for o11y"
-  AdditionalO11yHostedZoneArns:
+  AdditionalO11yHostedZoneIds:
     Type: CommaDelimitedList
     Default: ""
-    Description: "Additional o11y hosted zone ARNs for multi-region deployments (comma-separated full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)"
+    Description: "Additional o11y hosted zone IDs for multi-region deployments (comma-separated IDs, e.g. Z111AAA,Z222BBB)"
 Conditions:
-  HasAdditionalO11yZones: !Not [!Equals [!Join [",", !Ref AdditionalO11yHostedZoneArns], ""]]
+  HasAdditionalO11yZones: !Not [!Equals [!Join [",", !Ref AdditionalO11yHostedZoneIds], ""]]
 Resources:
   TiDBCloudSyncImageRole:
     Type: AWS::IAM::Role
@@ -341,7 +341,7 @@ Resources:
                 - Action:
                     - route53:ChangeResourceRecordSets
                   Effect: Allow
-                  Resource: !Ref AdditionalO11yHostedZoneArns
+                  Resource: !Ref AdditionalO11yHostedZoneIds
                   Sid: "Route53WriteAdditional"
                 - !Ref AWS::NoValue
               - Action:
