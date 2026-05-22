@@ -33,8 +33,17 @@ Before you begin, ensure you have the following:
    | `--o11y-hz-id` | The id of the hosted zone for O11Y, obtained in `prerequisites` step |
    | `--pca-arn` | ARN of the private CA you prepared in `prerequisites` step |
 
+   Optional parameters for multi-region deployments:
+
+   | Parameter | Description |
+   |-----------|-------------|
+   | `--additional-pca-arns` | Comma-separated full ARNs of additional PCAs for extra regions (e.g. `arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID`) |
+   | `--additional-tidb-hz-ids` | Comma-separated IDs of additional TiDB hosted zones for extra regions (e.g. `Z111AAA,Z222BBB`) |
+   | `--additional-o11y-hz-ids` | Comma-separated IDs of additional o11y hosted zones for extra regions (e.g. `Z111AAA,Z222BBB`) |
+
 2. **Run Script**
 
+   Single-region:
    ```bash
    bash tidbcloud-byoc-setup.sh \
        --control-plane-id <ControlPlaneAccountId> \
@@ -42,6 +51,19 @@ Before you begin, ensure you have the following:
        --tidb-hz-id <TidbHostedZoneId> \
        --o11y-hz-id <O11yHostedZoneId> \
        --pca-arn <TidbPCAArn>
+   ```
+
+   Multi-region (include additional region resources at setup time):
+   ```bash
+   bash tidbcloud-byoc-setup.sh \
+       --control-plane-id <ControlPlaneAccountId> \
+       --clinic-id <ClinicAccountId> \
+       --tidb-hz-id <TidbHostedZoneId> \
+       --o11y-hz-id <O11yHostedZoneId> \
+       --pca-arn <TidbPCAArn> \
+       --additional-pca-arns <Region2PCAArn>,<Region3PCAArn> \
+       --additional-tidb-hz-ids <Region2TidbHZId>,<Region3TidbHZId> \
+       --additional-o11y-hz-ids <Region2O11yHZId>,<Region3O11yHZId>
    ```
    > Replace `<parameter>` with the value prepared in the previous step
 
@@ -65,3 +87,27 @@ bash tidbcloud-byoc-update.sh --stack all
 
 > `--stack` must be one of `deploy`, `dataplane`, `o11y`, or `all`
 > The script requires that the stack has already been created via `tidbcloud-byoc-setup.sh`
+
+### Adding multi-region support to an existing deployment
+
+Existing single-region deployments can be extended to cover additional regions without re-creating any IAM roles. The new multi-region parameters default to empty, so a plain `--stack all` update is safe and causes no functional change.
+
+To enable an additional region, pass the new region's resources when updating:
+
+```bash
+bash tidbcloud-byoc-update.sh --stack all \
+    --additional-pca-arns <Region2PCAArn> \
+    --additional-tidb-hz-ids <Region2TidbHZId> \
+    --additional-o11y-hz-ids <Region2O11yHZId>
+```
+
+For three or more regions, pass all additional ARNs as comma-separated values:
+
+```bash
+bash tidbcloud-byoc-update.sh --stack all \
+    --additional-pca-arns <Region2PCAArn>,<Region3PCAArn> \
+    --additional-tidb-hz-ids <Region2TidbHZId>,<Region3TidbHZId> \
+    --additional-o11y-hz-ids <Region2O11yHZId>,<Region3O11yHZId>
+```
+
+Once provided, these values are stored in the CloudFormation stack and replayed automatically on future updates.

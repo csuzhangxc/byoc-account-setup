@@ -3,21 +3,30 @@ set -euo pipefail
 
 usage() {
   cat <<EOF
-Usage: $0 --stack <stack>
+Usage: $0 --stack <stack> [OPTIONS]
 
 Required:
   --stack <stack>   The stack to update, one of 'deploy', 'dataplane', 'o11y', or 'all'
 
 Options:
+  --additional-pca-arns <arns>       Comma-separated additional PCA ARNs for multi-region
+                                     (full ARNs, e.g. arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID)
+  --additional-tidb-hz-ids <ids>     Comma-separated additional TiDB hosted zone IDs for multi-region
+                                     (e.g. Z111AAA,Z222BBB)
+  --additional-o11y-hz-ids <ids>     Comma-separated additional o11y hosted zone IDs for multi-region
+                                     (e.g. Z111AAA,Z222BBB)
   -h, --help        Show this help message
 
 This script automatically fetches existing parameters from deployed stacks.
-No need to pass parameters again.
+No need to pass parameters again unless adding new multi-region resources.
 EOF
   exit "${1:-1}"
 }
 
 STACK=""
+AdditionalPCAArns=""
+AdditionalTidbHostedZoneIds=""
+AdditionalO11yHostedZoneIds=""
 
 require_arg() {
   if [[ $# -lt 2 || "${2-}" == -* ]]; then
@@ -26,11 +35,33 @@ require_arg() {
   fi
 }
 
+# Convert comma-separated hosted zone IDs to full ARNs
+# e.g. "Z111,Z222" -> "arn:aws:route53:::hostedzone/Z111,arn:aws:route53:::hostedzone/Z222"
+hz_ids_to_arns() {
+  local ids="${1// /}"
+  local result=""
+  IFS=',' read -ra id_array <<< "$ids"
+  for id in "${id_array[@]}"; do
+    [[ -n "$result" ]] && result="${result},"
+    result="${result}arn:aws:route53:::hostedzone/${id}"
+  done
+  echo "$result"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --stack)
       require_arg "$@"
       STACK="$2"; shift 2 ;;
+    --additional-pca-arns)
+      require_arg "$@"
+      AdditionalPCAArns="${2// /}"; shift 2 ;;
+    --additional-tidb-hz-ids)
+      require_arg "$@"
+      AdditionalTidbHostedZoneIds="${2// /}"; shift 2 ;;
+    --additional-o11y-hz-ids)
+      require_arg "$@"
+      AdditionalO11yHostedZoneIds="${2// /}"; shift 2 ;;
     -h|--help)
       usage 0 ;;
     *)
@@ -59,6 +90,7 @@ get_parameter_overrides() {
 update_stack() {
   local stack_name=$1
   local template_file=$2
+  local extra_overrides="${3:-}"
 
   echo "Updating stack: ${stack_name} ..."
 
@@ -76,27 +108,43 @@ update_stack() {
   aws cloudformation deploy \
     --stack-name "$stack_name" \
     --template-file "$template_file" \
-    --parameter-overrides $overrides \
+    --parameter-overrides $overrides $extra_overrides \
     --capabilities CAPABILITY_NAMED_IAM \
     --no-fail-on-empty-changeset
 
   echo "Stack ${stack_name} updated successfully (or no changes were necessary)."
 }
 
+deploy_overrides=""
+if [[ -n "$AdditionalO11yHostedZoneIds" ]]; then
+  deploy_overrides="AdditionalO11yHostedZoneIds=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
+fi
+
+dataplane_overrides=""
+[[ -n "$AdditionalPCAArns" ]] && dataplane_overrides="AdditionalPCAArns=$AdditionalPCAArns"
+if [[ -n "$AdditionalTidbHostedZoneIds" ]]; then
+  dataplane_overrides="$dataplane_overrides AdditionalHostedZoneIds=$(hz_ids_to_arns "$AdditionalTidbHostedZoneIds")"
+fi
+
+o11y_overrides=""
+if [[ -n "$AdditionalO11yHostedZoneIds" ]]; then
+  o11y_overrides="AdditionalO11yHostedZoneIds=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
+fi
+
 case "$STACK" in
   deploy)
-    update_stack "tidbcloud-byoc-setup-deploy" "./tidbcloud-byoc-setup-deploy.yaml"
+    update_stack "tidbcloud-byoc-setup-deploy" "./tidbcloud-byoc-setup-deploy.yaml" "$deploy_overrides"
     ;;
   dataplane)
-    update_stack "tidbcloud-byoc-setup-dataplane" "./tidbcloud-byoc-setup-dataplane.yaml"
+    update_stack "tidbcloud-byoc-setup-dataplane" "./tidbcloud-byoc-setup-dataplane.yaml" "$dataplane_overrides"
     ;;
   o11y)
-    update_stack "tidbcloud-byoc-setup-o11y" "./tidbcloud-byoc-setup-o11y.yaml"
+    update_stack "tidbcloud-byoc-setup-o11y" "./tidbcloud-byoc-setup-o11y.yaml" "$o11y_overrides"
     ;;
   all)
-    update_stack "tidbcloud-byoc-setup-deploy" "./tidbcloud-byoc-setup-deploy.yaml"
-    update_stack "tidbcloud-byoc-setup-dataplane" "./tidbcloud-byoc-setup-dataplane.yaml"
-    update_stack "tidbcloud-byoc-setup-o11y" "./tidbcloud-byoc-setup-o11y.yaml"
+    update_stack "tidbcloud-byoc-setup-deploy" "./tidbcloud-byoc-setup-deploy.yaml" "$deploy_overrides"
+    update_stack "tidbcloud-byoc-setup-dataplane" "./tidbcloud-byoc-setup-dataplane.yaml" "$dataplane_overrides"
+    update_stack "tidbcloud-byoc-setup-o11y" "./tidbcloud-byoc-setup-o11y.yaml" "$o11y_overrides"
     ;;
   *)
     echo "Error: unknown stack '$STACK'. Must be one of: deploy, dataplane, o11y, all"

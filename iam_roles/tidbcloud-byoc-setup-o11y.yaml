@@ -7,6 +7,12 @@ Parameters:
     Type: CommaDelimitedList
     Default: "arn:aws:iam::557537366020:role/globalserver-role-780c8f0,arn:aws:iam::380838443567:role/tidbcloud-global-apigw"
     Description: "The ARNs of the O11Y global IAM roles that can assume the API Gateway role (comma-separated list)"
+  AdditionalO11yHostedZoneIds:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: "Additional o11y hosted zone IDs for multi-region deployments (comma-separated IDs, e.g. Z111AAA,Z222BBB)"
+Conditions:
+  HasAdditionalO11yZones: !Not [!Equals [!Join [",", !Ref AdditionalO11yHostedZoneIds], ""]]
 Resources:
   # TiDBCloud O11y Control Plane Role
   #
@@ -65,6 +71,13 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !Sub arn:aws:route53:::hostedzone/${O11yHostedZoneId}
+              - !If
+                - HasAdditionalO11yZones
+                - Action:
+                    - route53:ChangeResourceRecordSets
+                  Effect: Allow
+                  Resource: !Ref AdditionalO11yHostedZoneIds
+                - !Ref AWS::NoValue
               - Effect: Allow
                 Action:
                   - route53:ListHostedZones
