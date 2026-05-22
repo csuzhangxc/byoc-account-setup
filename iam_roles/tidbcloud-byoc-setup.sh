@@ -15,10 +15,10 @@ Required:
 Optional:
   --additional-pca-arns <arns>       Comma-separated additional PCA ARNs for multi-region
                                      (full ARNs, e.g. arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID)
-  --additional-tidb-hz-arns <arns>   Comma-separated additional TiDB hosted zone ARNs for multi-region
-                                     (full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)
-  --additional-o11y-hz-arns <arns>   Comma-separated additional o11y hosted zone ARNs for multi-region
-                                     (full ARNs, e.g. arn:aws:route53:::hostedzone/ZXXX)
+  --additional-tidb-hz-ids <ids>     Comma-separated additional TiDB hosted zone IDs for multi-region
+                                     (e.g. Z111AAA,Z222BBB)
+  --additional-o11y-hz-ids <ids>     Comma-separated additional o11y hosted zone IDs for multi-region
+                                     (e.g. Z111AAA,Z222BBB)
   --o11y-global-role-arns <arns>     Comma-separated list of O11Y global role ARNs
                                      (default: arn:aws:iam::557537366020:role/globalserver-role-780c8f0,arn:aws:iam::380838443567:role/tidbcloud-global-apigw)
   --github-runner-id <id>            Google account ID for GitHub runner
@@ -37,14 +37,27 @@ TidbHostedZoneId=""
 O11yHostedZoneId=""
 TidbPCAArn=""
 AdditionalPCAArns=""
-AdditionalTidbHostedZoneArns=""
-AdditionalO11yHostedZoneArns=""
+AdditionalTidbHostedZoneIds=""
+AdditionalO11yHostedZoneIds=""
 
 require_arg() {
   if [[ $# -lt 2 || "${2-}" == -* ]]; then
     echo "Error: $1 requires a value"
     usage
   fi
+}
+
+# Convert comma-separated hosted zone IDs to full ARNs
+# e.g. "Z111,Z222" -> "arn:aws:route53:::hostedzone/Z111,arn:aws:route53:::hostedzone/Z222"
+hz_ids_to_arns() {
+  local ids="${1// /}"
+  local result=""
+  IFS=',' read -ra id_array <<< "$ids"
+  for id in "${id_array[@]}"; do
+    [[ -n "$result" ]] && result="${result},"
+    result="${result}arn:aws:route53:::hostedzone/${id}"
+  done
+  echo "$result"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -67,12 +80,12 @@ while [[ $# -gt 0 ]]; do
     --additional-pca-arns)
       require_arg "$@"
       AdditionalPCAArns="${2// /}"; shift 2 ;;
-    --additional-tidb-hz-arns)
+    --additional-tidb-hz-ids)
       require_arg "$@"
-      AdditionalTidbHostedZoneArns="${2// /}"; shift 2 ;;
-    --additional-o11y-hz-arns)
+      AdditionalTidbHostedZoneIds="${2// /}"; shift 2 ;;
+    --additional-o11y-hz-ids)
       require_arg "$@"
-      AdditionalO11yHostedZoneArns="${2// /}"; shift 2 ;;
+      AdditionalO11yHostedZoneIds="${2// /}"; shift 2 ;;
     --o11y-global-role-arns)
       require_arg "$@"
       O11yGlobalRoleArns="$2"; shift 2 ;;
@@ -102,7 +115,9 @@ if [[ ${#missing[@]} -gt 0 ]]; then
 fi
 
 deploy_overrides=""
-[[ -n "$AdditionalO11yHostedZoneArns" ]] && deploy_overrides="$deploy_overrides AdditionalO11yHostedZoneArns=$AdditionalO11yHostedZoneArns"
+if [[ -n "$AdditionalO11yHostedZoneIds" ]]; then
+  deploy_overrides="AdditionalO11yHostedZoneArns=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
+fi
 
 # shellcheck disable=SC2086
 aws cloudformation deploy \
@@ -116,7 +131,9 @@ aws cloudformation deploy \
 
 dataplane_overrides=""
 [[ -n "$AdditionalPCAArns" ]] && dataplane_overrides="$dataplane_overrides AdditionalPCAArns=$AdditionalPCAArns"
-[[ -n "$AdditionalTidbHostedZoneArns" ]] && dataplane_overrides="$dataplane_overrides AdditionalHostedZoneArns=$AdditionalTidbHostedZoneArns"
+if [[ -n "$AdditionalTidbHostedZoneIds" ]]; then
+  dataplane_overrides="$dataplane_overrides AdditionalHostedZoneArns=$(hz_ids_to_arns "$AdditionalTidbHostedZoneIds")"
+fi
 
 # shellcheck disable=SC2086
 aws cloudformation deploy \
@@ -130,7 +147,9 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 
 o11y_overrides=""
-[[ -n "$AdditionalO11yHostedZoneArns" ]] && o11y_overrides="$o11y_overrides AdditionalO11yHostedZoneArns=$AdditionalO11yHostedZoneArns"
+if [[ -n "$AdditionalO11yHostedZoneIds" ]]; then
+  o11y_overrides="AdditionalO11yHostedZoneArns=$(hz_ids_to_arns "$AdditionalO11yHostedZoneIds")"
+fi
 
 # shellcheck disable=SC2086
 aws cloudformation deploy \

@@ -38,8 +38,8 @@ Before you begin, ensure you have the following:
    | Parameter | Description |
    |-----------|-------------|
    | `--additional-pca-arns` | Comma-separated full ARNs of additional PCAs for extra regions (e.g. `arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID`) |
-   | `--additional-tidb-hz-arns` | Comma-separated full ARNs of additional TiDB hosted zones for extra regions (e.g. `arn:aws:route53:::hostedzone/ZXXX`) |
-   | `--additional-o11y-hz-arns` | Comma-separated full ARNs of additional o11y hosted zones for extra regions (e.g. `arn:aws:route53:::hostedzone/ZXXX`) |
+   | `--additional-tidb-hz-ids` | Comma-separated IDs of additional TiDB hosted zones for extra regions (e.g. `Z111AAA,Z222BBB`) |
+   | `--additional-o11y-hz-ids` | Comma-separated IDs of additional o11y hosted zones for extra regions (e.g. `Z111AAA,Z222BBB`) |
 
 2. **Run Script**
 
@@ -62,8 +62,8 @@ Before you begin, ensure you have the following:
        --o11y-hz-id <O11yHostedZoneId> \
        --pca-arn <TidbPCAArn> \
        --additional-pca-arns <Region2PCAArn>,<Region3PCAArn> \
-       --additional-tidb-hz-arns <Region2TidbHZArn>,<Region3TidbHZArn> \
-       --additional-o11y-hz-arns <Region2O11yHZArn>,<Region3O11yHZArn>
+       --additional-tidb-hz-ids <Region2TidbHZId>,<Region3TidbHZId> \
+       --additional-o11y-hz-ids <Region2O11yHZId>,<Region3O11yHZId>
    ```
    > Replace `<parameter>` with the value prepared in the previous step
 
@@ -97,8 +97,8 @@ To enable an additional region, pass the new region's resources when updating:
 ```bash
 bash tidbcloud-byoc-update.sh --stack all \
     --additional-pca-arns <Region2PCAArn> \
-    --additional-tidb-hz-arns <Region2TidbHZArn> \
-    --additional-o11y-hz-arns <Region2O11yHZArn>
+    --additional-tidb-hz-ids <Region2TidbHZId> \
+    --additional-o11y-hz-ids <Region2O11yHZId>
 ```
 
 For three or more regions, pass all additional ARNs as comma-separated values:
@@ -106,8 +106,8 @@ For three or more regions, pass all additional ARNs as comma-separated values:
 ```bash
 bash tidbcloud-byoc-update.sh --stack all \
     --additional-pca-arns <Region2PCAArn>,<Region3PCAArn> \
-    --additional-tidb-hz-arns <Region2TidbHZArn>,<Region3TidbHZArn> \
-    --additional-o11y-hz-arns <Region2O11yHZArn>,<Region3O11yHZArn>
+    --additional-tidb-hz-ids <Region2TidbHZId>,<Region3TidbHZId> \
+    --additional-o11y-hz-ids <Region2O11yHZId>,<Region3O11yHZId>
 ```
 
 Once provided, these values are stored in the CloudFormation stack and replayed automatically on future updates.
