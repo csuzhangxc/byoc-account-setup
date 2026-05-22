@@ -66,13 +66,13 @@ while [[ $# -gt 0 ]]; do
       TidbPCAArn="$2"; shift 2 ;;
     --additional-pca-arns)
       require_arg "$@"
-      AdditionalPCAArns="$2"; shift 2 ;;
+      AdditionalPCAArns="${2// /}"; shift 2 ;;
     --additional-tidb-hz-arns)
       require_arg "$@"
-      AdditionalTidbHostedZoneArns="$2"; shift 2 ;;
+      AdditionalTidbHostedZoneArns="${2// /}"; shift 2 ;;
     --additional-o11y-hz-arns)
       require_arg "$@"
-      AdditionalO11yHostedZoneArns="$2"; shift 2 ;;
+      AdditionalO11yHostedZoneArns="${2// /}"; shift 2 ;;
     --o11y-global-role-arns)
       require_arg "$@"
       O11yGlobalRoleArns="$2"; shift 2 ;;
