@@ -60,8 +60,56 @@ Resources:
                   - s3:ListBucket
                   - sts:AssumeRole
                   - sts:GetCallerIdentity
+                  - ec2:DescribeLaunchTemplateVersions
+                  - ecr:GetAuthorizationToken
                 Effect: Allow
                 Resource: "*"
+              - Action:
+                  - iam:GetRole
+                  - iam:ListAttachedRolePolicies
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-eks-node-role
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-eks-cluster-role
+              - Action:
+                  - iam:PassRole
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: eks.amazonaws.com
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/tidbcloud-o11y-eks-node-role
+              - Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:DescribeImages
+                  - ecr:ListImages
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/ManagedBy: PingCAP
+                Resource:
+                  - "*"
+                Effect: Allow
+              - Action:
+                  - eks:CreateCluster
+                  - eks:TagResource
+                  - eks:CreateNodegroup
+                  - eks:CreateAddon
+                  - eks:UpdateClusterVersion
+                  - eks:UpdateClusterConfig
+                  - eks:UpdateNodegroupConfig
+                  - eks:UpdateNodegroupVersion
+                  - eks:UpdateAddon
+                  - eks:DeleteCluster
+                  - eks:DeleteNodeGroup
+                  - eks:DeleteAddon
+                  - eks:UntagResource
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:eks:*:${AWS::AccountId}:cluster/o11y-*
+                  - !Sub arn:aws:eks:*:${AWS::AccountId}:addon/o11y-*/*/*
+                  - !Sub arn:aws:eks:*:${AWS::AccountId}:nodegroup/o11y-*/*/*
         - PolicyName: ExternalDNSPolicy
           PolicyDocument:
             Version: "2012-10-17"
