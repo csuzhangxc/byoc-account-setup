@@ -12,10 +12,12 @@ Before you begin, ensure you have the following:
 
 2. **Hosted Zones**
    * You need to configure two public hosted zones in advance: one for TiDB and one for O11Y.
-   * AWS document for creating pubic hosted zones: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html
+   * For multi-region deployments, the same hosted zones can be shared across all regions, or you can create dedicated hosted zones per region.
+   * AWS document for creating public hosted zones: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html
 
 3. **Private CA**
-   * You need to configure a private CA before running this script
+   * You need to configure a private CA before running this script.
+   * For multi-region deployments, the same PCA can be shared across all regions, or you can create a dedicated PCA per region.
    * AWS document for creating a private CA: https://docs.aws.amazon.com/privateca/latest/userguide/create-CA.html
 
 ## Initialization
@@ -33,13 +35,13 @@ Before you begin, ensure you have the following:
    | `--o11y-hz-id` | The id of the hosted zone for O11Y, obtained in `prerequisites` step |
    | `--pca-arn` | ARN of the private CA you prepared in `prerequisites` step |
 
-   Optional parameters for multi-region deployments:
+   Optional parameters for multi-region deployments (all three are optional; omit any that are shared with the primary region):
 
    | Parameter | Description |
    |-----------|-------------|
-   | `--additional-pca-arns` | Comma-separated full ARNs of additional PCAs for extra regions (e.g. `arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID`) |
-   | `--additional-tidb-hz-ids` | Comma-separated IDs of additional TiDB hosted zones for extra regions (e.g. `Z111AAA,Z222BBB`) |
-   | `--additional-o11y-hz-ids` | Comma-separated IDs of additional o11y hosted zones for extra regions (e.g. `Z111AAA,Z222BBB`) |
+   | `--additional-pca-arns` | Comma-separated ARNs of additional PCAs for extra regions. Omit if all regions share the same PCA specified by `--pca-arn`. (e.g. `arn:aws:acm-pca:us-east-1:ACCOUNT:certificate-authority/ID`) |
+   | `--additional-tidb-hz-ids` | Comma-separated IDs of additional TiDB hosted zones for extra regions. Omit if all regions share the same hosted zone specified by `--tidb-hz-id`. (e.g. `Z111AAA,Z222BBB`) |
+   | `--additional-o11y-hz-ids` | Comma-separated IDs of additional O11Y hosted zones for extra regions. Omit if all regions share the same hosted zone specified by `--o11y-hz-id`. (e.g. `Z111AAA,Z222BBB`) |
 
 2. **Run Script**
 
@@ -53,15 +55,37 @@ Before you begin, ensure you have the following:
        --pca-arn <TidbPCAArn>
    ```
 
-   Multi-region (include additional region resources at setup time):
+   Multi-region with shared resources (same PCA and hosted zones for all regions):
    ```bash
    bash tidbcloud-byoc-setup.sh \
        --control-plane-id <ControlPlaneAccountId> \
        --clinic-id <ClinicAccountId> \
        --tidb-hz-id <TidbHostedZoneId> \
        --o11y-hz-id <O11yHostedZoneId> \
-       --pca-arn <TidbPCAArn> \
+       --pca-arn <TidbPCAArn>
+   ```
+
+   Multi-region with dedicated resources per region:
+   ```bash
+   bash tidbcloud-byoc-setup.sh \
+       --control-plane-id <ControlPlaneAccountId> \
+       --clinic-id <ClinicAccountId> \
+       --tidb-hz-id <Region1TidbHostedZoneId> \
+       --o11y-hz-id <Region1O11yHostedZoneId> \
+       --pca-arn <Region1PCAArn> \
        --additional-pca-arns <Region2PCAArn>,<Region3PCAArn> \
+       --additional-tidb-hz-ids <Region2TidbHZId>,<Region3TidbHZId> \
+       --additional-o11y-hz-ids <Region2O11yHZId>,<Region3O11yHZId>
+   ```
+
+   You can also mix shared and dedicated resources — for example, share the PCA across regions but use separate hosted zones:
+   ```bash
+   bash tidbcloud-byoc-setup.sh \
+       --control-plane-id <ControlPlaneAccountId> \
+       --clinic-id <ClinicAccountId> \
+       --tidb-hz-id <Region1TidbHostedZoneId> \
+       --o11y-hz-id <Region1O11yHostedZoneId> \
+       --pca-arn <SharedPCAArn> \
        --additional-tidb-hz-ids <Region2TidbHZId>,<Region3TidbHZId> \
        --additional-o11y-hz-ids <Region2O11yHZId>,<Region3O11yHZId>
    ```
@@ -92,7 +116,9 @@ bash tidbcloud-byoc-update.sh --stack all
 
 Existing single-region deployments can be extended to cover additional regions without re-creating any IAM roles. The new multi-region parameters default to empty, so a plain `--stack all` update is safe and causes no functional change.
 
-To enable an additional region, pass the new region's resources when updating:
+If the new region can share the same PCA and hosted zones already in use, no additional parameters are needed — the existing resources will cover all regions automatically.
+
+To enable an additional region with its own dedicated resources, pass those resources when updating:
 
 ```bash
 bash tidbcloud-byoc-update.sh --stack all \
@@ -101,7 +127,15 @@ bash tidbcloud-byoc-update.sh --stack all \
     --additional-o11y-hz-ids <Region2O11yHZId>
 ```
 
-For three or more regions, pass all additional ARNs as comma-separated values:
+Each flag is independent — omit any that should remain shared with the primary region. For example, to add a region with its own hosted zones but share the existing PCA:
+
+```bash
+bash tidbcloud-byoc-update.sh --stack all \
+    --additional-tidb-hz-ids <Region2TidbHZId> \
+    --additional-o11y-hz-ids <Region2O11yHZId>
+```
+
+For three or more regions with dedicated resources, pass all values as comma-separated lists:
 
 ```bash
 bash tidbcloud-byoc-update.sh --stack all \
