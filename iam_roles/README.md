@@ -103,6 +103,14 @@ Update a specific stack:
 bash tidbcloud-byoc-update.sh --stack deploy
 ```
 
+Enable Route 53 permissions for external-dns on the existing EKS node role:
+
+```bash
+bash tidbcloud-byoc-update.sh \
+    --stack dataplane \
+    --enable-external-dns-node-role-policy true
+```
+
 Update all stacks:
 
 ```bash
